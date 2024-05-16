@@ -87,10 +87,10 @@ function camera:move(xMove, yMove)
 	---@type unit
 	local dy = (self.boundBox.top - self.boundBox.bottom) * yMove
 
-	self.boundBox.top = self.boundBox.top + dx
-	self.boundBox.bottom = self.boundBox.bottom + dx
-	self.boundBox.left = self.boundBox.left + dy
-	self.boundBox.right = self.boundBox.right + dy
+	self.boundBox.top = self.boundBox.top + dy
+	self.boundBox.bottom = self.boundBox.bottom + dy
+	self.boundBox.left = self.boundBox.left + dx
+	self.boundBox.right = self.boundBox.right + dx
 
 	self.auto = false
 end

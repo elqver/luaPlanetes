@@ -4,13 +4,14 @@ return {
 		amount = 30,
 		x = { min = -100, max = 100 },
 		y = { min = -100, max = 100 },
-		mass = { min = 20, max = 20 },
-		speed = { min = 0, max = 0 },
+		mass = { min = 20, max = 2000 },
+		speed = { min = -10, max = 10 },
 	},
 	pointsFixed = {},
 	simulation = {
 		speedUp = 1,
 		g = 10,
+		unite = true,
 	},
 	camera = {
 		left = -500,

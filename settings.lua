@@ -1,6 +1,6 @@
 return {
 	pointsGeneration = {
-		turnedOn = false,
+		turnedOn = true,
 		amount = 30,
 		x = { min = -100, max = 100 },
 		y = { min = -100, max = 100 },
@@ -9,15 +9,14 @@ return {
 	},
 	pointsFixed = {},
 	simulation = {
-		speedUp = 0.001,
+		speedUp = 1,
 		g = 10,
 	},
 	camera = {
-		-- center of camera in metic units
-		center = { x = 0, y = 0 },
-		-- minimal metric units to be fit by axis
-		spread = { x = 2000, y = 2000 },
-		-- required portion of free space on every board
+		left = -500,
+		right = -500,
+		top = -500,
+		bottom = -500,
 		adjPadding = 0.1,
 		-- how fast can auto camera move and scale
 		-- (according to current spread per second)

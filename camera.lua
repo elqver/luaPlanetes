@@ -1,54 +1,102 @@
 -- TODO
--- Automaticly return to auto adjusting on timeout
--- Add rotation
--- Add position saving
--- Add point of interest systems
--- Add second auto mode based on masses
 
 local init = require("settings").camera
 
+---@alias unit number
+---@alias px number
+
+---@class BoundBox
+---@field left integer
+---@field right integer
+---@field top integer
+---@field bottom integer
+
+---@class Camera
+---@field boundBox BoundBox
+---@field auto boolean
 local camera = {
-	-- center in units
-	center = { x = init.center.x, y = init.center.y },
-	-- amount of units per axis on the screen
-	spread = { x = init.spread.x, y = init.spread.y },
+	boundBox = { left = init.left, right = init.right, top = init.top, bottom = init.bottom },
 	auto = init.auto,
 }
 
+---@class CameraTranslation
+---@field translateX unit
+---@field translateY unit
+---@field scale number
+
+---@param screenWidth px
+---@param screenHeight px
+---@return CameraTranslation
 function camera:getTrans(screenWidth, screenHeight)
-	local res = { scale = math.min(screenWidth / self.spread.x, screenHeight / self.spread.y) }
-	--
-	--		  |This is self.spread.x|
-	--	|---------|---------------------|---------|
-	--	|------This is real amount of units-------|
-	-- scale = px / units
-	-- real amount of uinits = screenWidth / scale
+	-- unit / px
+	local scale = math.max(
+		(self.boundBox.right - self.boundBox.left) / screenWidth,
+		(self.boundBox.top - self.boundBox.bottom) / screenHeight
+	)
 
-	res.translateX = self.center.x - (self.spread.x - screenWidth / res.scale) / 2
-	res.translateY = self.center.y - (self.spread.y - screenHeight / res.scale) / 2
-	print("spread = ", self.spread.x, ", ", self.spread.y)
-	print("screen = ", screenWidth, ", ", screenHeight)
-	print("Scale = ", res.scale)
-	print("translate = ", res.translateX, ", ", res.translateY)
-	return res
+	-- u stands for uint here
+	local uCameraCenterX = (self.boundBox.left + self.boundBox.right) / 2
+	local uCameraCenterY = (self.boundBox.top + self.boundBox.bottom) / 2
+	local uCameraWidth = self.boundBox.right - self.boundBox.left
+	local uScreenWidth = screenWidth * scale
+	local uCameraHeight = self.boundBox.top - self.boundBox.bottom
+	local uScreenHeight = screenHeight * scale
+
+	local translateX = -(self.boundBox.left - (uScreenWidth - uCameraWidth) / 2)
+	local translateY = -(self.boundBox.bottom - (uScreenHeight - uCameraHeight) / 2)
+
+	---@type CameraTranslation
+	return { scale = scale, translateX = translateX, translateY = translateY }
 end
 
+---@return string
+function camera:repr()
+	return string.format(
+		"\
+\t\t\ttop=%d\n\
+Camera: left=%d\t\t\tright=%d\n\
+\t\t\tbottom=%d\n\
+",
+		self.boundBox.top,
+		self.boundBox.left,
+		self.boundBox.right,
+		self.boundBox.bottom
+	)
+end
+
+---@param value number
+--- 0.1 - zoom out expanding scpoe
+--- -0.1 - zoom in reduce scpoe
 function camera:zoom(value)
-	init.auto = false
-	self.spread = {
-		x = self.spread.x * value,
-		y = self.spread.y * value,
-	}
+	local xDiff = (self.boundBox.right - self.boundBox.left) * value / 2
+	self.boundBox.left = self.boundBox.left - xDiff
+	self.boundBox.right = self.boundBox.right + xDiff
+
+	local yDiff = (self.boundBox.top - self.boundBox.bottom) * value / 2
+	self.boundBox.bottom = self.boundBox.bottom - yDiff
+	self.boundBox.top = self.boundBox.top + yDiff
+
 	self.auto = false
 end
 
-function camera:move(x, y)
-	init.auto = false
-	self.center.x = self.center.x + self.spread.x * x
-	self.center.y = self.center.y + self.spread.y * y
+---@param xMove number
+---@param yMove number
+function camera:move(xMove, yMove)
+	---@type unit
+	local dx = (self.boundBox.right - self.boundBox.left) * xMove
+	---@type unit
+	local dy = (self.boundBox.top - self.boundBox.bottom) * yMove
+
+	self.boundBox.top = self.boundBox.top + dx
+	self.boundBox.bottom = self.boundBox.bottom + dx
+	self.boundBox.left = self.boundBox.left + dy
+	self.boundBox.right = self.boundBox.right + dy
+
 	self.auto = false
 end
 
+---@param points table
+---@return BoundBox
 local function getBorders(points)
 	local res = {
 		left = math.huge,
@@ -66,15 +114,7 @@ local function getBorders(points)
 end
 
 function camera:adjust(points, dt)
-	local desiredBorders = getBorders(points)
-	self.spread = {
-		x = desiredBorders.right - desiredBorders.left,
-		y = desiredBorders.top - desiredBorders.bottom,
-	}
-	self.center = {
-		x = (desiredBorders.right - desiredBorders.left) / 2,
-		y = (desiredBorders.top - desiredBorders.bottom) / 2,
-	}
+	self.boundBox = getBorders(points)
 end
 
 return camera
